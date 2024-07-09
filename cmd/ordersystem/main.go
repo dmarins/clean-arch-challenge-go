@@ -3,9 +3,13 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net/http"
 
+	graphql_handler "github.com/99designs/gqlgen/graphql/handler"
+	"github.com/99designs/gqlgen/graphql/playground"
 	"github.com/dmarins/clean-arch-challenge-go/configs"
 	"github.com/dmarins/clean-arch-challenge-go/internal/event/handler"
+	"github.com/dmarins/clean-arch-challenge-go/internal/infra/graph"
 	"github.com/dmarins/clean-arch-challenge-go/internal/infra/web/webserver"
 	"github.com/dmarins/clean-arch-challenge-go/pkg/events"
 	"github.com/streadway/amqp"
@@ -42,7 +46,7 @@ func main() {
 		RabbitMQChannel: rabbitMQChannel,
 	})
 
-	// createOrderUseCase := NewCreateOrderUseCase(db, eventDispatcher)
+	createOrderUseCase := NewCreateOrderUseCase(db, eventDispatcher)
 
 	// HttpServer
 	webserver := webserver.NewWebServer(configs.WebServerPort)
@@ -50,5 +54,15 @@ func main() {
 	webserver.AddHandler("/order", webOrderHandler.Create)
 	fmt.Println("Starting web server on port", configs.WebServerPort)
 
-	webserver.Start()
+	go webserver.Start()
+
+	// GraphQLServer
+	srv := graphql_handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
+		CreateOrderUseCase: *createOrderUseCase,
+	}}))
+	http.Handle("/", playground.Handler("GraphQL playground", "/query"))
+	http.Handle("/query", srv)
+
+	fmt.Println("Starting GraphQL server on port", configs.GraphQLServerPort)
+	http.ListenAndServe(":"+configs.GraphQLServerPort, nil)
 }
