@@ -3,6 +3,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"net"
 	"net/http"
 
 	graphql_handler "github.com/99designs/gqlgen/graphql/handler"
@@ -10,9 +11,13 @@ import (
 	"github.com/dmarins/clean-arch-challenge-go/configs"
 	"github.com/dmarins/clean-arch-challenge-go/internal/event/handler"
 	"github.com/dmarins/clean-arch-challenge-go/internal/infra/graph"
+	"github.com/dmarins/clean-arch-challenge-go/internal/infra/grpc/pb"
+	"github.com/dmarins/clean-arch-challenge-go/internal/infra/grpc/service"
 	"github.com/dmarins/clean-arch-challenge-go/internal/infra/web/webserver"
 	"github.com/dmarins/clean-arch-challenge-go/pkg/events"
 	"github.com/streadway/amqp"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -48,15 +53,28 @@ func main() {
 
 	createOrderUseCase := NewCreateOrderUseCase(db, eventDispatcher)
 
-	// HttpServer
+	// Http Server
 	webserver := webserver.NewWebServer(configs.WebServerPort)
 	webOrderHandler := NewWebOrderHandler(db, eventDispatcher)
 	webserver.AddHandler("/order", webOrderHandler.Create)
-	fmt.Println("Starting web server on port", configs.WebServerPort)
+	fmt.Println("Starting HTTP server on port", configs.WebServerPort)
 
 	go webserver.Start()
 
-	// GraphQLServer
+	// GRPC Server
+	grpcServer := grpc.NewServer()
+	createOrderService := service.NewOrderService(*createOrderUseCase)
+	pb.RegisterOrderServiceServer(grpcServer, createOrderService)
+	reflection.Register(grpcServer)
+
+	fmt.Println("Starting GRPC server on port", configs.GRPCServerPort)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%s", configs.GRPCServerPort))
+	if err != nil {
+		panic(err)
+	}
+	go grpcServer.Serve(lis)
+
+	// GraphQL Server
 	srv := graphql_handler.NewDefaultServer(graph.NewExecutableSchema(graph.Config{Resolvers: &graph.Resolver{
 		CreateOrderUseCase: *createOrderUseCase,
 	}}))
