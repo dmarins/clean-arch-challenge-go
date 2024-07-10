@@ -3,10 +3,10 @@ package entity
 import "errors"
 
 type Order struct {
-	ID         string
-	Price      float64
-	Tax        float64
-	FinalPrice float64
+	ID         string  `json:"id"`
+	Price      float64 `json:"price"`
+	Tax        float64 `json:"tax"`
+	FinalPrice float64 `json:"final_price"`
 }
 
 func NewOrder(id string, price, tax float64) (*Order, error) {

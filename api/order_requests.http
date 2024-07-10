@@ -1,0 +1,14 @@
+###
+
+POST http://localhost:8000/order
+Content-Type: application/json
+
+{
+    "id": "{{$guid}}",
+    "price": {{$randomInt 1 100}}.{{$randomInt 10 99}},
+    "tax": 0.5
+}
+
+###
+
+GET http://localhost:8000/order
