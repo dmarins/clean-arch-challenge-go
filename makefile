@@ -2,6 +2,8 @@ DOCKERCOMPOSECMD=docker-compose
 WIRECMD=wire
 GOCMD=go
 
+.PHONY: wire
+
 wire:
 	@command -v wire >/dev/null 2>&1 || $(GOCMD) install github.com/google/wire/cmd/wire@latest
 	@cd cmd/ordersystem && $(WIRECMD)
@@ -18,7 +20,10 @@ dc-down:
 dc-restart: dc-down dc-up
 
 db-init:
-	docker exec -it mysql mysql -uroot -proot orders -e "CREATE TABLE orders (id varchar(255) NOT NULL, price float NOT NULL, tax float NOT NULL, final_price float NOT NULL, PRIMARY KEY (id));"
+	migrate -path=sql/migrations -database "mysql://root:root@tcp(localhost:3306)/orders" -verbose up
+
+db-drop:
+	migrate -path=sql/migrations -database "mysql://root:root@tcp(localhost:3306)/orders" -verbose down
 
 db-query:
 	docker exec -it mysql mysql -uroot -proot orders
