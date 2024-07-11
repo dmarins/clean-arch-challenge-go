@@ -1,4 +1,4 @@
-###
+### CreateOrder
 
 POST http://localhost:8000/order
 Content-Type: application/json
@@ -9,6 +9,6 @@ Content-Type: application/json
     "tax": 0.5
 }
 
-###
+### GetOrders
 
 GET http://localhost:8000/order
