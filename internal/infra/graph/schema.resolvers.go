@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/dmarins/clean-arch-challenge-go/internal/infra/graph/model"
 	"github.com/dmarins/clean-arch-challenge-go/internal/usecase"
@@ -33,7 +32,24 @@ func (r *mutationResolver) CreateOrder(ctx context.Context, input *model.OrderIn
 
 // ListOrders is the resolver for the listOrders field.
 func (r *queryResolver) ListOrders(ctx context.Context) ([]*model.Order, error) {
-	panic(fmt.Errorf("not implemented: ListOrders - listOrders"))
+	output, err := r.ListOrderUseCase.Execute()
+	if err != nil {
+		return nil, err
+	}
+
+	orders := make([]*model.Order, 0)
+	for _, item := range output {
+		order := model.Order{
+			ID:         item.ID,
+			Price:      item.Price,
+			Tax:        item.Tax,
+			FinalPrice: item.FinalPrice,
+		}
+
+		orders = append(orders, &order)
+	}
+
+	return orders, nil
 }
 
 // Mutation returns MutationResolver implementation.

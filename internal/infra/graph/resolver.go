@@ -8,4 +8,5 @@ import "github.com/dmarins/clean-arch-challenge-go/internal/usecase"
 
 type Resolver struct {
 	CreateOrderUseCase usecase.CreateOrderUseCase
+	ListOrderUseCase   usecase.ListOrderUseCase
 }
